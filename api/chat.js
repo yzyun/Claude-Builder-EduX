@@ -42,6 +42,11 @@ export async function POST(request) {
       .map((message) => ({ role: message.role, content: message.content }))
       .slice(-MAX_TURNS);
 
+    // Claude expects the conversation to start with the visitor.
+    if (messages[0]?.role === "assistant") {
+      messages.shift();
+    }
+
     if (messages.length === 0) {
       return Response.json(
         { error: "Please send a question first." },

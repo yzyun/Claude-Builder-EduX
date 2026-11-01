@@ -885,6 +885,7 @@
           status.textContent = "Thinking…";
 
           const pending = addBubble("…", "system pending");
+          let friendlyError = "";
 
           try {
             const response = await fetch("/api/chat", {
@@ -898,6 +899,7 @@
             });
 
             if (!response.ok) {
+              friendlyError = data.error;
               throw new Error(data.error || "Request failed");
             }
 
@@ -905,17 +907,24 @@
               throw new Error("Empty reply");
             }
 
-            messages.push({ role: "assistant", content: data.reply });
+            // The server rejects long messages, so only remember the first part.
+            messages.push({
+              role: "assistant",
+              content: data.reply.slice(0, MAX_LENGTH),
+            });
             pending.textContent = data.reply;
             pending.classList.remove("pending");
             status.textContent = "";
           } catch (error) {
+            messages.pop();
+            input.value = text;
             pending.remove();
             addBubble(
-              "Sorry — I could not answer just now. Please try again in a moment.",
+              friendlyError ||
+                "Sorry — I could not answer just now. Please try again in a moment.",
               "system"
             );
-            status.textContent = "The assistant is unavailable right now.";
+            status.textContent = "Your question is back in the box to try again.";
           } finally {
             setBusy(false);
             input.focus({ preventScroll: true });
